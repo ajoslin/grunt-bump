@@ -12,18 +12,22 @@
 var bumpVersion = require("./bump/index.js");
 
 module.exports = function(grunt) {
-  grunt.registerTask('bump', 'Increment the version number.', function(versionType) {
-    var PACKAGE_FILE = 'package.json';
-    var file = grunt.file.read(PACKAGE_FILE);
-    var version;
+  grunt.registerTask('bump', 'Increment the version number.', function() {
+    var versionType = this.args[0];
+    var argPackages = this.args.splice(versionType ? 1 : 0);
+    var packages = argPackages.length ? argPackages : ['package.json', 'bower.json', 'component.json'];
 
-    var file = file.replace(/([\'|\"]version[\'|\"][ ]*:[ ]*[\'|\"])([\d|.]*)([\'|\"])/i, function(match, left, center, right) {
-      version = bumpVersion(center, versionType || 'patch');
+    packages.filter(grunt.file.exists).map(grunt.file.read).forEach(function(content, i) {
+      var version;
 
-      return left + version + right;
-    } );
+      content = content.replace(/([\'|\"]version[\'|\"][ ]*:[ ]*[\'|\"])([\d|.]*)([\'|\"])/i, function(match, left, center, right) {
+        version = bumpVersion(center, versionType || 'patch');
 
-    grunt.file.write(PACKAGE_FILE, file);
+        return left + version + right;
+      } );
+      grunt.file.write(packages[i], content);
+    });
+
     grunt.log.ok('Version bumped to ' + version);
   });
 };
